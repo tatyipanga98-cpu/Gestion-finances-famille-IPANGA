@@ -92,18 +92,18 @@
   .fab {
     position: fixed; right: 18px; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 7;
     width: 58px; height: 58px; border-radius: 50%; border: 0; color: #fff; cursor: pointer;
-    background: var(--accent); box-shadow: 0 12px 26px -6px var(--accent);
+    background: var(--accent, #1565ff); box-shadow: 0 12px 26px -6px var(--accent, #1565ff);
     display: flex; align-items: center; justify-content: center; animation: pop .4s cubic-bezier(.2,.8,.2,1) both;
   }
 
   h2 { font-family: var(--serif); color: var(--ink); font-size: 26px; margin: 4px 0 12px; font-weight: 700; }
-  h2 .acc { color: var(--accent); }
-  .back { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0; margin-bottom: 4px; font-size: 14px; }
+  h2 .acc { color: var(--accent, #1565ff); }
+  .back { background: none; border: 0; color: var(--accent, #1565ff); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0; margin-bottom: 4px; font-size: 14px; }
   .card {
     background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 14px;
     box-shadow: 0 8px 24px rgba(21,101,255,.06); animation: fadeUp .45s ease both;
   }
-  .card.accent { border-top: 4px solid var(--accent); }
+  .card.accent { border-top: 4px solid var(--accent, #1565ff); }
   .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
   .pos { color: var(--green); } .neg { color: var(--red); }
   .muted { color: var(--muted); font-size: 12.5px; }
@@ -121,22 +121,22 @@
   .alert.late { background: #fdecea; color: #9b1c15; }
   .btn {
     border: 0; border-radius: 14px; padding: 13px 16px; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; width: 100%;
-    background: linear-gradient(135deg, var(--accent), var(--accent)); box-shadow: 0 10px 22px -10px var(--accent);
+    background: linear-gradient(135deg, var(--accent, #1565ff), var(--accent, #1565ff)); box-shadow: 0 10px 22px -10px var(--accent, #1565ff);
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   }
-  .btn.ghost { background: #fff; color: var(--accent); border: 1.5px solid var(--accent); box-shadow: none; }
+  .btn.ghost { background: #fff; color: var(--accent, #1565ff); border: 1.5px solid var(--accent, #1565ff); box-shadow: none; }
   .btn.small { width: auto; padding: 8px 12px; font-size: 13px; border-radius: 11px; }
   .btn.danger { background: #fff; color: var(--red); border: 1.5px solid var(--red); box-shadow: none; }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .actions .btn { flex: 1; }
   .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
   .chip { border: 1.5px solid var(--line); background: #fff; padding: 7px 13px; border-radius: 999px; font-size: 13px; cursor: pointer; color: var(--muted); font-weight: 600; }
-  .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chip.on { background: var(--accent, #1565ff); color: #fff; border-color: var(--accent, #1565ff); }
   .progress { height: 10px; background: #e9eef8; border-radius: 999px; overflow: hidden; margin-top: 12px; }
-  .progress > div { height: 100%; width: var(--w, 0%); border-radius: 999px; background: linear-gradient(90deg, var(--accent), #7fb0ff); animation: grow .9s cubic-bezier(.2,.8,.2,1) both; }
+  .progress > div { height: 100%; width: var(--w, 0%); border-radius: 999px; background: linear-gradient(90deg, var(--accent, #1565ff), #7fb0ff); animation: grow .9s cubic-bezier(.2,.8,.2,1) both; }
   .empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 14px; }
   .summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .summary .big { font-family: var(--serif); font-size: 30px; font-weight: 700; color: var(--accent); line-height: 1.1; }
+  .summary .big { font-family: var(--serif); font-size: 30px; font-weight: 700; color: var(--accent, #1565ff); line-height: 1.1; }
 
   /* ---------- accueil ---------- */
   .hero {
@@ -624,7 +624,7 @@
     const byMonth = {};
     list.forEach(t => { (byMonth[t.date.slice(0, 7)] ||= []).push(t); });
     const groups = Object.keys(byMonth).map(mo =>
-      `<div class="card"><div class="muted" style="font-weight:800;text-transform:capitalize;margin-bottom:4px;color:var(--accent)">${fmtMonth(mo)}</div>${byMonth[mo].map(rowTx).join('')}</div>`).join('');
+      `<div class="card"><div class="muted" style="font-weight:800;text-transform:capitalize;margin-bottom:4px;color:var(--accent, #1565ff)">${fmtMonth(mo)}</div>${byMonth[mo].map(rowTx).join('')}</div>`).join('');
     const title = isIn ? 'Revenus' : 'Dépenses';
     let dime = '';
     if (!isIn) {
@@ -652,7 +652,7 @@
       const pct = l.amount ? Math.min(100, (loanPaid(l) / l.amount) * 100) : 0;
       return `<div class="card">
         <div class="row" style="border:0;padding:0;cursor:pointer" data-edit="loan" data-id="${l.id}">
-          <div class="main"><span class="dot-ico" style="background:var(--accent)">${icon(isGiven ? 'dollar' : 'card', 18)}</span>
+          <div class="main"><span class="dot-ico" style="background:var(--accent, #1565ff)">${icon(isGiven ? 'dollar' : 'card', 18)}</span>
             <div style="min-width:0"><div class="title">${esc(l.person)} <span class="badge ${st.cls}">${st.label}</span></div>
             <div class="muted">${fmtDate(l.date)}${l.due ? ' · échéance ' + fmtDate(l.due) : ''} · ${esc(userLabel(l.who))}</div></div></div>
           <div class="amt">${fmt(rem, l.cur)}<div class="muted">sur ${fmt(l.amount, l.cur)}</div></div>
@@ -691,7 +691,7 @@
       const tag = d < 0 ? '<span class="badge late">Retard</span>' : d <= 3 ? '<span class="badge warn">Bientôt</span>' : '';
       return `<div class="card">
         <div class="row" style="border:0;padding:0">
-          <div class="main"><span class="dot-ico" style="background:var(--accent)">${icon('users', 18)}</span>
+          <div class="main"><span class="dot-ico" style="background:var(--accent, #1565ff)">${icon('users', 18)}</span>
           <div style="min-width:0"><div class="title">${esc(t.name)} ${tag}</div>
           <div class="muted">${fmt(t.amount, t.cur)} · ${t.freq === 'hebdo' ? 'hebdomadaire' : 'mensuelle'} · ${esc(userLabel(t.who))}</div>
           <div class="muted">Prochaine cotisation : ${fmtDate(next)}</div></div></div>
@@ -713,7 +713,7 @@
       const pct = s.target ? Math.min(100, (total / s.target) * 100) : 0;
       return `<div class="card">
         <div class="row" style="border:0;padding:0">
-          <div class="main"><span class="dot-ico" style="background:var(--accent)">${icon('target', 18)}</span>
+          <div class="main"><span class="dot-ico" style="background:var(--accent, #1565ff)">${icon('target', 18)}</span>
           <div style="min-width:0"><div class="title">${esc(s.name)}</div>
           <div class="muted">${esc(userLabel(s.who))} · objectif ${fmt(s.target, s.cur)}</div></div></div>
           <div class="amt">${fmt(total, s.cur)}<div class="muted">${pct.toFixed(0)} %</div></div>
