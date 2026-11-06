@@ -290,27 +290,61 @@
   let reportMonth = null;
 
   /* ================= stockage ================= */
+  function normState(d) {
+    const out = Object.assign(structuredClone(defaults), d || {}, { settings: Object.assign(structuredClone(defaults.settings), (d && d.settings) || {}) });
+    const fix = w => (w === 'A' ? 'taty' : w === 'B' ? 'armine' : w);
+    ['tx', 'loans', 'tontines', 'savings'].forEach(k => (out[k] || []).forEach(x => { x.who = fix(x.who); }));
+    return out;
+  }
+  function normAuth(a) {
+    const out = {};
+    Object.keys(USERS).forEach(id => { out[id] = Object.assign({ hash: null, salt: null, qq: null, qh: null }, (a && a[id]) || {}); });
+    return out;
+  }
   function loadData() {
     try {
       const raw = localStorage.getItem(DATA_KEY);
-      if (!raw) return structuredClone(defaults);
-      const d = JSON.parse(raw);
-      const out = Object.assign(structuredClone(defaults), d, { settings: Object.assign(structuredClone(defaults.settings), d.settings || {}) });
-      const fix = w => (w === 'A' ? 'taty' : w === 'B' ? 'armine' : w);
-      ['tx', 'loans', 'tontines', 'savings'].forEach(k => out[k].forEach(x => { x.who = fix(x.who); }));
-      return out;
+      return raw ? normState(JSON.parse(raw)) : structuredClone(defaults);
     } catch (e) { return structuredClone(defaults); }
   }
-  function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(state)); }
+  function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(state)); scheduleCloudSave(); }
   function loadAuth() {
-    try {
-      const a = JSON.parse(localStorage.getItem(AUTH_KEY) || '{}');
-      const out = {};
-      Object.keys(USERS).forEach(id => { out[id] = Object.assign({ hash: null, salt: null, qq: null, qh: null }, a[id] || {}); });
-      return out;
-    } catch (e) { return { taty: { hash: null }, armine: { hash: null } }; }
+    try { return normAuth(JSON.parse(localStorage.getItem(AUTH_KEY) || '{}')); } catch (e) { return normAuth({}); }
   }
-  function saveAuth() { localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); }
+  function saveAuth() { localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); scheduleCloudSave(); }
+
+  /* ================= synchronisation (base en ligne) ================= */
+  const CLOUD_URL = 'https://xztpfvxkpahabdzkbisd.supabase.co/rest/v1/famille_store';
+  const CLOUD_KEY = 'sb_publishable_UrXtxf-aJSEpApGuPVu1WQ_K7iLfdyh';
+  const cloudHeaders = { apikey: CLOUD_KEY, Authorization: 'Bearer ' + CLOUD_KEY, 'Content-Type': 'application/json' };
+  let cloudTimer = null;
+  function scheduleCloudSave() { clearTimeout(cloudTimer); cloudTimer = setTimeout(pushCloud, 500); }
+  async function pushCloud() {
+    try {
+      await fetch(CLOUD_URL + '?id=eq.ipanga', {
+        method: 'PATCH',
+        headers: { ...cloudHeaders, Prefer: 'return=minimal' },
+        body: JSON.stringify({ payload: { state, auth }, updated_at: new Date().toISOString() })
+      });
+    } catch (e) { /* hors connexion : les données restent sur l'appareil et seront envoyées plus tard */ }
+  }
+  async function pullCloud() {
+    try {
+      const res = await fetch(CLOUD_URL + '?id=eq.ipanga&select=payload', { headers: cloudHeaders });
+      if (!res.ok) return;
+      const rows = await res.json();
+      const p = rows[0] && rows[0].payload;
+      if (p && p.state) {
+        state = normState(p.state);
+        auth = normAuth(p.auth);
+        localStorage.setItem(DATA_KEY, JSON.stringify(state));
+        localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+        if (session && USERS[session]) render(); else renderAuth('login');
+      } else {
+        await pushCloud();
+      }
+    } catch (e) { /* hors connexion : on utilise les données de l'appareil */ }
+  }
 
   /* ================= outils ================= */
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1072,6 +1106,7 @@
 
   if (session && USERS[session]) showApp();
   else renderAuth('login');
+  pullCloud();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
