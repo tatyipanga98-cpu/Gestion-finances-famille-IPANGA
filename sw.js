@@ -1,5 +1,5 @@
-const CACHE = 'financement-v2';
-const FILES = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './avatar-taty.jpg', './avatar-armine.jpg'];
+const CACHE = 'financement-v4';
+const FILES = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './avatar-taty.jpg', './avatar-armine.jpg', './login.jpg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
