@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d2b4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Famille IPANGA">
+<title>Famille IPANGA · Gestion de financement</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --navy: #1d2b4a;
+    --gold: #b08d4a;
+    --gold-light: #efe4cc;
+    --paper: #f7f5f0;
+    --card: #ffffff;
+    --ink: #222;
+    --muted: #6b6b6b;
+    --green: #2e7d4f;
+    --red: #b03a2e;
+    --orange: #c77d12;
+    --line: #e4ded0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--paper); color: var(--ink); font-size: 15px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hidden { display: none !important; }
+
+  /* ----- authentification ----- */
+  #auth {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px; background: linear-gradient(160deg, var(--navy) 0%, #2e3f66 60%, var(--gold) 140%);
+  }
+  .auth-card {
+    background: #fff; border-radius: 18px; width: 100%; max-width: 380px; padding: 26px 22px 22px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.25);
+  }
+  .auth-card .seal { text-align: center; color: var(--gold); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+  .auth-card h1 { font-family: Georgia, 'Times New Roman', serif; color: var(--navy); font-size: 22px; text-align: center; margin: 6px 0 4px; }
+  .auth-card .lead { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .auth-card .greet { text-align: center; color: var(--navy); font-weight: 600; margin: 4px 0 14px; }
+  .pwd-wrap { position: relative; }
+  .pwd-wrap input { padding-right: 46px; }
+  .eye {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    border: 0; background: none; font-size: 18px; cursor: pointer; padding: 6px; color: var(--muted);
+  }
+  .link { background: none; border: 0; color: var(--navy); text-decoration: underline; cursor: pointer; font-size: 13px; padding: 4px 0; }
+  .auth-links { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .notice { font-size: 13px; color: var(--muted); background: #f5f1e6; border-radius: 8px; padding: 9px 11px; margin-bottom: 12px; }
+  .error { color: var(--red); font-size: 13px; min-height: 18px; margin-top: 8px; text-align: center; }
+
+  /* ----- coque de l'application ----- */
+  header.top {
+    background: var(--navy); color: #fff; padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+    position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px;
+  }
+  header.top .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); flex-shrink: 0; }
+  header.top .txt { min-width: 0; }
+  header.top h1 { margin: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header.top .sub { font-size: 12px; color: var(--gold-light); margin-top: 2px; }
+  main { padding: 14px 14px 24px; max-width: 720px; margin: 0 auto; }
+  body.app { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+  nav.tabs {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 6;
+    display: flex; background: #fff; border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav.tabs button {
+    flex: 1; border: 0; background: none; padding: 9px 2px 8px; font-size: 11px; color: var(--muted);
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  nav.tabs button .ico { font-size: 18px; line-height: 1; }
+  nav.tabs button.active { color: var(--navy); font-weight: 600; }
+  nav.tabs button.active .ico { color: var(--gold); }
+
+  h2 { font-family: Georgia, 'Times New Roman', serif; color: var(--navy); font-size: 19px; margin: 8px 0 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .stat .value { font-size: 17px; font-weight: 700; color: var(--navy); margin-top: 2px; word-break: break-word; }
+  .pos { color: var(--green); } .neg { color: var(--red); }
+  .muted { color: var(--muted); font-size: 12px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row .main { min-width: 0; flex: 1; }
+  .row .title { font-weight: 600; word-break: break-word; }
+  .row .amt { font-weight: 700; white-space: nowrap; text-align: right; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--gold-light); color: var(--navy); margin-left: 6px; vertical-align: middle; }
+  .badge.late { background: #f6dcd8; color: var(--red); }
+  .badge.ok { background: #d7eedf; color: var(--green); }
+  .badge.warn { background: #fbe9cf; color: var(--orange); }
+  .alert { border-left: 4px solid var(--orange); background: #fff8ec; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+  .alert.late { border-left-color: var(--red); background: #fdf1ef; }
+  .alert.ok { border-left-color: var(--green); background: #eef8f1; }
+  .btn { border: 0; border-radius: 10px; padding: 11px 16px; font-size: 15px; font-weight: 600; background: var(--navy); color: #fff; cursor: pointer; width: 100%; }
+  .btn.gold { background: var(--gold); }
+  .btn.ghost { background: #fff; color: var(--navy); border: 1px solid var(--navy); }
+  .btn.small { width: auto; padding: 6px 10px; font-size: 13px; }
+  .btn.danger { background: #fff; color: var(--red); border: 1px solid var(--red); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .actions .btn { flex: 1; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip { border: 1px solid var(--line); background: #fff; padding: 6px 12px; border-radius: 999px; font-size: 13px; cursor: pointer; color: var(--muted); }
+  .chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .progress { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; margin-top: 8px; }
+  .progress > div { height: 100%; background: var(--gold); }
+  .empty { text-align: center; color: var(--muted); padding: 24px 8px; font-size: 14px; }
+  .profile { display: flex; align-items: center; gap: 14px; }
+  .profile img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold); }
+
+  /* ----- formulaires ----- */
+  .overlay { position: fixed; inset: 0; background: rgba(20,25,40,.45); z-index: 20; display: none; align-items: flex-end; justify-content: center; }
+  .overlay.show { display: flex; }
+  .sheet { background: #fff; width: 100%; max-width: 620px; max-height: 92vh; overflow: auto; border-radius: 18px 18px 0 0; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .sheet h3 { margin: 0 0 12px; font-family: Georgia, serif; color: var(--navy); font-size: 18px; }
+  .field { margin-bottom: 11px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 10px 11px; border: 1px solid #cfc7b5; border-radius: 9px; font-size: 16px; font-family: inherit; background: #fff; color: var(--ink); }
+  .sheet .btn { margin-top: 6px; }
+  .sheet .btn.ghost { margin-top: 8px; }
+  .toast { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 30; max-width: 90%; text-align: center; }
+  .toast.show { opacity: 1; }
+
+  /* ----- rapport mensuel (impression) ----- */
+  .report { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 26px 24px; font-family: 'Times New Roman', Times, serif; color: #111; }
+  .report .rh { text-align: center; border-bottom: 2px solid var(--navy); padding-bottom: 10px; margin-bottom: 14px; }
+  .report .rh .fam { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .report .rh h4 { margin: 6px 0 2px; font-size: 20px; color: var(--navy); }
+  .report .rh .per { font-size: 14px; }
+  .report h5 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy); margin: 16px 0 6px; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+  .report table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .report th, .report td { border-bottom: 1px solid #ddd; padding: 5px 4px; text-align: left; }
+  .report th { font-weight: 700; color: var(--navy); }
+  .report td.r, .report th.r { text-align: right; white-space: nowrap; }
+  .report tr.total td { font-weight: 700; border-top: 1px solid #111; }
+  .report .sign { margin-top: 28px; display: flex; justify-content: space-between; font-size: 13px; }
+  .report .sign div { width: 45%; text-align: center; border-top: 1px solid #111; padding-top: 4px; }
+  .report .note { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    body { background: #fff; }
+    body.app { padding-bottom: 0; }
+    header.top, nav.tabs, .no-print, .toast, .overlay { display: none !important; }
+    main { padding: 0; max-width: none; }
+    .report { border: 0; padding: 0; }
+  }
+  @media (min-width: 720px) { .grid2 { grid-template-columns: repeat(4, 1fr); } }
+</style>
+</head>
+<body>
+
+<!-- ============ ÉCRAN D'ACCÈS ============ -->
+<section id="auth" class="hidden">
+  <div class="auth-card" id="authCard"></div>
+</section>
+
+<!-- ============ APPLICATION ============ -->
+<div id="app" class="hidden">
+  <header class="top">
+    <img class="avatar" id="hdrAvatar" alt="">
+    <div class="txt">
+      <h1 id="hdrTitle"></h1>
+      <div class="sub" id="hdrSub"></div>
+    </div>
+  </header>
+  <main id="view"></main>
+  <nav class="tabs no-print">
+    <button data-tab="home"><span class="ico">🏠</span>Accueil</button>
+    <button data-tab="mouvements"><span class="ico">🧾</span>Mouvements</button>
+    <button data-tab="prets"><span class="ico">🤝</span>Prêts</button>
+    <button data-tab="tontines"><span class="ico">🔁</span>Tontines</button>
+    <button data-tab="epargne"><span class="ico">🎯</span>Épargne</button>
+    <button data-tab="compte"><span class="ico">👤</span>Compte</button>
+  </nav>
+</div>
+
+<div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  /* ================= constantes ================= */
+  const DATA_KEY = 'gestion-financement-v1';
+  const AUTH_KEY = 'gf-auth-v1';
+  const SESSION_KEY = 'gf-session-v1';
+  const FAMILY = 'Famille IPANGA';
+  const CATS_OUT = ['Dîme', 'Offrande (église)', 'Contribution famille', 'Alimentation', 'Logement', 'Transport', 'Santé', 'Scolarité', 'Factures', 'Vêtements', 'Autre'];
+  const CATS_CONTRIB = ['Dîme', 'Offrande (église)', 'Contribution famille'];
+  const CATS_IN = ['Salaire', 'Commerce', 'Aide familiale', 'Remboursement reçu', 'Autre'];
+  const CURS = ['FC', 'USD'];
+  const QUESTIONS = [
+    'Nom de jeune fille de la mère',
+    'Ville où vous vous êtes mariés',
+    'Nom du premier animal de compagnie',
+    'Nom de votre école primaire'
+  ];
+  const USERS = {
+    taty:   { label: 'Taty IPANGA',   role: 'Père', photo: 'avatar-taty.jpg' },
+    armine: { label: 'Armine IPANGA', role: 'Mère', photo: 'avatar-armine.jpg' }
+  };
+
+  const defaults = {
+    settings: { rate: 2300, tithe: 50, titheCur: 'USD', defaultCur: 'FC' },
+    tx: [], loans: [], tontines: [], savings: []
+  };
+
+  /* ================= état ================= */
+  let state = loadData();
+  let auth = loadAuth();
+  let session = localStorage.getItem(SESSION_KEY); // 'taty' | 'armine' | null
+  let currentTab = 'home';
+  let filterWho = 'all';
+  let reportMonth = null;
+
+  /* ================= stockage ================= */
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(DATA_KEY);
+      if (!raw) return structuredClone(defaults);
+      const d = JSON.parse(raw);
+      const out = Object.assign(structuredClone(defaults), d, { settings: Object.assign(structuredClone(defaults.settings), d.settings || {}) });
+      /* migration des anciennes valeurs A / B vers les identifiants */
+      const fix = w => (w === 'A' ? 'taty' : w === 'B' ? 'armine' : w);
+      ['tx', 'loans', 'tontines', 'savings'].forEach(k => out[k].forEach(x => { x.who = fix(x.who); }));
+      return out;
+    } catch (e) { return structuredClone(defaults); }
+  }
+  function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(state)); }
+  function loadAuth() {
+    try {
+      const raw = localStorage.getItem(AUTH_KEY);
+      const a = raw ? JSON.parse(raw) : {};
+      const out = {};
+      Object.keys(USERS).forEach(id => { out[id] = Object.assign({ hash: null, salt: null, qq: null, qh: null }, a[id] || {}); });
+      return out;
+    } catch (e) { return { taty: { hash: null }, armine: { hash: null } }; }
+  }
+  function saveAuth() { localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); }
+
+  /* ================= outils ================= */
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const monthStr = () => todayStr().slice(0, 7);
+  const daysBetween = (a, b) => Math.round((new Date(a + 'T00:00') - new Date(b + 'T00:00')) / 86400000);
+  function addDays(s, n) { const d = new Date(s + 'T00:00'); d.setDate(d.getDate() + n); return iso(d); }
+  function addMonths(s, n) { const d = new Date(s + 'T00:00'); d.setMonth(d.getMonth() + n); return iso(d); }
+  function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  const fmtDate = s => s ? new Date(s + 'T00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  const fmtMonth = m => new Date(m + '-01T00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  function fmt(n, cur) {
+    const v = Math.round((Number(n) || 0) * 100) / 100;
+    const s = v.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+    return cur === 'USD' ? '$ ' + s : s + ' FC';
+  }
+  function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  const toUSD = (a, cur) => cur === 'USD' ? Number(a) : Number(a) / state.settings.rate;
+  const toFC = (a, cur) => cur === 'FC' ? Number(a) : Number(a) * state.settings.rate;
+  const userLabel = id => (USERS[id] ? USERS[id].label : '');
+  const matchWho = w => filterWho === 'all' || filterWho === w;
+  function toast(msg) {
+    const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+  async function sha(text) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  const hashPwd = (salt, pwd) => sha(salt + '|' + pwd);
+  const normAns = s => String(s || '').trim().toLowerCase();
+
+  function loanPaid(l) { return l.payments.reduce((s, p) => s + Number(p.amount), 0); }
+  function loanRemaining(l) { return Math.max(0, Number(l.amount) - loanPaid(l)); }
+  function loanStatus(l) {
+    const rem = loanRemaining(l);
+    if (rem <= 0) return { label: 'Soldé', cls: 'ok' };
+    if (l.due && daysBetween(l.due, todayStr()) < 0) return { label: 'En retard', cls: 'late' };
+    return { label: 'En cours', cls: 'warn' };
+  }
+  function tontineNext(t) {
+    const p = t.paidCount || 0;
+    return t.freq === 'mensuel' ? addMonths(t.start, p) : addDays(t.start, p * 7);
+  }
+  const savingsTotal = s => s.deposits.reduce((a, d) => a + Number(d.amount), 0);
+
+  /* dîme : montant mensuel fixe, suivi en dollars */
+  function titheFor(month) {
+    const due = Number(state.settings.tithe) || 0;
+    const paid = state.tx
+      .filter(t => t.type === 'out' && t.cat === 'Dîme' && t.date.startsWith(month))
+      .reduce((s, t) => s + toUSD(t.amount, t.cur), 0);
+    return { due, paid, rest: Math.max(0, due - paid) };
+  }
+
+  /* ================= authentification ================= */
+  function renderAuth(mode = 'login', prefill = '', message = '') {
+    const card = document.getElementById('authCard');
+    const idOpts = Object.keys(USERS).map(id => `<option value="${id}" ${prefill === id ? 'selected' : ''}>${esc(USERS[id].label)}</option>`).join('');
+    const eye = id => `<button type="button" class="eye" data-eye="${id}" aria-label="Afficher le mot de passe">👁</button>`;
+    const err = message ? `<div class="error">${esc(message)}</div>` : '<div class="error"></div>';
+
+    if (mode === 'login') {
+      card.innerHTML = `
+        <div class="seal">${FAMILY}</div>
+        <h1>Gestion de financement</h1>
+        <div class="lead">Espace privé · accès réservé à la famille</div>
+        <form id="formAuth">
+          <div class="field"><label>Identifiant</label>
+            <select id="uid">${idOpts}</select></div>
+          <div class="field"><label>Mot de passe</label>
+            <div class="pwd-wrap"><input id="pwd" type="password" autocomplete="current-password" required>${eye('pwd')}</div></div>
+          <button class="btn" type="submit">Se connecter</button>
+        </form>
+        ${err}
+        <div class="auth-links"><button class="link" data-go="setup">Première connexion</button><button class="link" data-go="forgot">Mot de passe oublié ?</button></div>`;
+    }
+
+    if (mode === 'setup') {
+      card.innerHTML = `
+        <div class="seal">${FAMILY}</div>
+        <h1>Première connexion</h1>
+        <div class="notice">Créez le mot de passe de <strong>${esc(userLabel(prefill))}</strong> et une question de secours, pour pouvoir le réinitialiser plus tard.</div>
+        <form id="formAuth">
+          <div class="field"><label>Identifiant</label><select id="uid">${idOpts}</select></div>
+          <div class="field"><label>Nouveau mot de passe (6 caractères minimum)</label>
+            <div class="pwd-wrap"><input id="pwd" type="password" autocomplete="new-password" required>${eye('pwd')}</div></div>
+          <div class="field"><label>Confirmer le mot de passe</label>
+            <div class="pwd-wrap"><input id="pwd2" type="password" autocomplete="new-password" required>${eye('pwd2')}</div></div>
+          <div class="field"><label>Question de secours</label>
+            <select id="qq">${QUESTIONS.map(q => `<option>${esc(q)}</option>`).join('')}</select></div>
+          <div class="field"><label>Réponse</label><input id="qa" type="text" autocomplete="off" required></div>
+          <button class="btn" type="submit">Créer mon accès</button>
+        </form>
+        ${err}
+        <div class="auth-links"><button class="link" data-go="login">Retour à la connexion</button></div>`;
+    }
+
+    if (mode === 'forgot') {
+      const acc = auth[prefill];
+      card.innerHTML = `
+        <div class="seal">${FAMILY}</div>
+        <h1>Mot de passe oublié</h1>
+        <form id="formAuth">
+          <div class="field"><label>Identifiant</label><select id="uid">${idOpts}</select></div>
+          ${acc && acc.hash ? `
+            <div class="field"><label>${esc(acc.qq)}</label><input id="qa" type="text" autocomplete="off" required></div>
+            <div class="field"><label>Nouveau mot de passe</label>
+              <div class="pwd-wrap"><input id="pwd" type="password" autocomplete="new-password" required>${eye('pwd')}</div></div>
+            <div class="field"><label>Confirmer le nouveau mot de passe</label>
+              <div class="pwd-wrap"><input id="pwd2" type="password" autocomplete="new-password" required>${eye('pwd2')}</div></div>
+            <button class="btn" type="submit">Réinitialiser</button>`
+          : `<div class="notice">Ce compte n’a pas encore de mot de passe. Utilisez « Première connexion ».</div>
+             <button class="btn" type="button" data-go="setup">Première connexion</button>`}
+        </form>
+        ${err}
+        <div class="auth-links"><button class="link" data-go="login">Retour à la connexion</button></div>`;
+    }
+
+    document.getElementById('auth').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+    document.body.classList.remove('app');
+    bindAuth(mode);
+  }
+
+  function bindAuth(mode) {
+    document.querySelectorAll('[data-eye]').forEach(b => b.onclick = () => {
+      const el = document.getElementById(b.dataset.eye);
+      el.type = el.type === 'password' ? 'text' : 'password';
+    });
+    document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+      const uidEl = document.getElementById('uid');
+      renderAuth(b.dataset.go, uidEl ? uidEl.value : 'taty');
+    });
+    const uidEl = document.getElementById('uid');
+    if (uidEl && mode !== 'login') uidEl.onchange = () => renderAuth(mode, uidEl.value);
+    const f = document.getElementById('formAuth');
+    if (!f) return;
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const id = document.getElementById('uid').value;
+      const pwd = document.getElementById('pwd') ? document.getElementById('pwd').value : '';
+      const acc = auth[id];
+      if (mode === 'login') {
+        if (!acc.hash) return renderAuth('setup', id, 'Ce compte n’a pas encore de mot de passe.');
+        const h = await hashPwd(acc.salt, pwd);
+        if (h !== acc.hash) return renderAuth('login', id, 'Identifiant ou mot de passe incorrect.');
+        return enter(id);
+      }
+      if (mode === 'setup') {
+        const pwd2 = document.getElementById('pwd2').value;
+        if (pwd.length < 6) return renderAuth('setup', id, 'Le mot de passe doit comporter au moins 6 caractères.');
+        if (pwd !== pwd2) return renderAuth('setup', id, 'Les deux mots de passe ne correspondent pas.');
+        const ans = document.getElementById('qa').value;
+        if (!normAns(ans)) return renderAuth('setup', id, 'Indiquez une réponse à la question de secours.');
+        const salt = uid();
+        auth[id] = { ...acc, salt, hash: await hashPwd(salt, pwd), qq: document.getElementById('qq').value, qh: await hashPwd(salt, normAns(ans)) };
+        saveAuth();
+        toast('Accès créé');
+        return enter(id);
+      }
+      if (mode === 'forgot') {
+        if (!acc.hash) return renderAuth('setup', id);
+        const ans = document.getElementById('qa').value;
+        if (await hashPwd(acc.salt, normAns(ans)) !== acc.qh) return renderAuth('forgot', id, 'La réponse ne correspond pas.');
+        const pwd2 = document.getElementById('pwd2').value;
+        if (pwd.length < 6) return renderAuth('forgot', id, 'Le mot de passe doit comporter au moins 6 caractères.');
+        if (pwd !== pwd2) return renderAuth('forgot', id, 'Les deux mots de passe ne correspondent pas.');
+        auth[id] = { ...acc, hash: await hashPwd(acc.salt, pwd) };
+        saveAuth();
+        toast('Mot de passe réinitialisé');
+        return renderAuth('login', id);
+      }
+    };
+  }
+
+  function enter(id) {
+    session = id;
+    localStorage.setItem(SESSION_KEY, id);
+    showApp();
+  }
+  function logout() {
+    session = null; localStorage.removeItem(SESSION_KEY);
+    renderAuth('login');
+  }
+
+  /* ================= coque ================= */
+  function showApp() {
+    document.getElementById('auth').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.body.classList.add('app');
+    const u = USERS[session];
+    const av = document.getElementById('hdrAvatar');
+    av.src = u.photo; av.alt = u.label;
+    document.getElementById('hdrTitle').textContent = FAMILY;
+    document.getElementById('hdrSub').textContent = 'Bonjour ' + u.label;
+    render();
+  }
+
+  function render() {
+    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+    const views = { home, mouvements, prets, tontines, epargne, compte, rapport };
+    document.getElementById('view').innerHTML = views[currentTab]();
+    bind();
+  }
+
+  function whoChips() {
+    const opts = [['all', 'Tous'], ['taty', USERS.taty.label], ['armine', USERS.armine.label]];
+    return '<div class="chips">' + opts.map(([k, l]) => `<span class="chip ${filterWho === k ? 'on' : ''}" data-who="${k}">${esc(l)}</span>`).join('') + '</div>';
+  }
+
+  /* ================= Accueil ================= */
+  function home() {
+    const m = monthStr();
+    const tx = state.tx.filter(t => matchWho(t.who));
+    const loans = state.loans.filter(l => matchWho(l.who));
+    const blocks = CURS.map(cur => {
+      const txs = tx.filter(t => t.cur === cur);
+      const inc = txs.filter(t => t.type === 'in').reduce((s, t) => s + +t.amount, 0);
+      const out = txs.filter(t => t.type === 'out').reduce((s, t) => s + +t.amount, 0);
+      const incM = txs.filter(t => t.type === 'in' && t.date.startsWith(m)).reduce((s, t) => s + +t.amount, 0);
+      const outM = txs.filter(t => t.type === 'out' && t.date.startsWith(m)).reduce((s, t) => s + +t.amount, 0);
+      const given = loans.filter(l => l.dir === 'given' && l.cur === cur).reduce((s, l) => s + loanRemaining(l), 0);
+      const owed = loans.filter(l => l.dir === 'received' && l.cur === cur).reduce((s, l) => s + loanRemaining(l), 0);
+      const sav = state.savings.filter(s => s.cur === cur).reduce((s, x) => s + savingsTotal(x), 0);
+      if (!txs.length && !given && !owed && !sav) return '';
+      return `<div class="card"><div class="muted" style="margin-bottom:8px;font-weight:600;color:var(--navy)">En ${cur}</div>
+        <div class="grid2">
+          <div class="stat"><div class="label">Solde</div><div class="value ${inc - out >= 0 ? 'pos' : 'neg'}">${fmt(inc - out, cur)}</div></div>
+          <div class="stat"><div class="label">Revenus du mois</div><div class="value pos">${fmt(incM, cur)}</div></div>
+          <div class="stat"><div class="label">Dépenses du mois</div><div class="value neg">${fmt(outM, cur)}</div></div>
+          <div class="stat"><div class="label">Épargne</div><div class="value">${fmt(sav, cur)}</div></div>
+          <div class="stat"><div class="label">On nous doit</div><div class="value">${fmt(given, cur)}</div></div>
+          <div class="stat"><div class="label">Nous devons</div><div class="value">${fmt(owed, cur)}</div></div>
+        </div></div>`;
+    }).join('');
+
+    /* consolidé en FC (taux 1 $ = 2 300 FC) */
+    const allTx = state.tx.filter(t => matchWho(t.who));
+    const solde = allTx.reduce((s, t) => s + (t.type === 'in' ? 1 : -1) * toFC(t.amount, t.cur), 0);
+    const consolidated = `<div class="card"><div class="stat"><div class="label">Solde consolidé (taux 1 $ = ${state.settings.rate.toLocaleString('fr-FR')} FC)</div>
+      <div class="value ${solde >= 0 ? 'pos' : 'neg'}">${fmt(solde, 'FC')}</div>
+      <div class="muted">soit environ ${fmt(solde / state.settings.rate, 'USD')}</div></div></div>`;
+
+    /* contributions du mois */
+    const contrib = CATS_CONTRIB.map(c => {
+      const v = state.tx.filter(t => matchWho(t.who) && t.type === 'out' && t.cat === c && t.date.startsWith(m))
+        .reduce((s, t) => s + toUSD(t.amount, t.cur), 0);
+      return [c, v];
+    });
+    const ti = titheFor(m);
+    const titheCard = `<div class="card">
+      <div class="row" style="border:0;padding:0"><div class="main"><div class="title">Dîme de ${fmtMonth(m)}</div>
+      <div class="muted">Versé ${fmt(ti.paid, 'USD')} sur ${fmt(ti.due, 'USD')}</div></div>
+      <div class="amt">${ti.rest > 0 ? '<span class="neg">Reste ' + fmt(ti.rest, 'USD') + '</span>' : '<span class="pos">Payée</span>'}</div></div>
+      <div class="progress"><div style="width:${ti.due ? Math.min(100, ti.paid / ti.due * 100) : 0}%"></div></div>
+      <div class="actions"><button class="btn small ghost" data-add="tx" data-cat="Dîme" data-cur="USD" data-amount="${ti.rest || ''}">+ Verser la dîme</button></div></div>`;
+    const contribCard = `<div class="card"><div class="muted" style="font-weight:600;color:var(--navy);margin-bottom:6px">Contributions du mois (en $)</div>
+      ${contrib.map(([c, v]) => `<div class="row"><div class="main">${esc(c)}</div><div class="amt">${fmt(v, 'USD')}</div></div>`).join('')}</div>`;
+
+    const alerts = [];
+    state.loans.forEach(l => {
+      const rem = loanRemaining(l);
+      if (rem <= 0 || !l.due) return;
+      const d = daysBetween(l.due, todayStr());
+      const txt = l.dir === 'given' ? `${l.person} vous doit` : `Vous devez à ${l.person}`;
+      if (d < 0) alerts.push({ cls: 'late', text: `Retard : ${txt} ${fmt(rem, l.cur)} (échéance ${fmtDate(l.due)})` });
+      else if (d <= 7) alerts.push({ cls: '', text: `Échéance dans ${d} j : ${txt} ${fmt(rem, l.cur)}` });
+    });
+    state.tontines.forEach(t => {
+      const n = tontineNext(t);
+      const d = daysBetween(n, todayStr());
+      if (d <= 3 && (t.paidCount || 0) < t.members) alerts.push({ cls: '', text: `Tontine « ${esc(t.name)} » : cotisation ${d < 0 ? 'en retard' : 'due le ' + fmtDate(n)} (${fmt(t.amount, t.cur)})` });
+    });
+    if (ti.rest > 0 && new Date().getDate() >= 20) alerts.push({ cls: '', text: `Dîme de ${fmtMonth(m)} : il reste ${fmt(ti.rest, 'USD')} à verser` });
+
+    const recent = [...state.tx].filter(t => matchWho(t.who)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+
+    return `
+      <h2>Tableau de bord</h2>
+      ${whoChips()}
+      ${alerts.length ? `<div style="margin-bottom:12px">${alerts.map(a => `<div class="alert ${a.cls}">${a.text}</div>`).join('')}</div>` : ''}
+      ${blocks || '<div class="card empty">Commencez par ajouter un mouvement, un prêt ou une épargne.</div>'}
+      ${consolidated}
+      ${titheCard}
+      ${contribCard}
+      <h2>Derniers mouvements</h2>
+      <div class="card">${recent.length ? recent.map(rowTx).join('') : '<div class="empty">Aucun mouvement pour le moment.</div>'}</div>
+      <div class="actions"><button class="btn" data-add="tx">+ Mouvement</button><button class="btn gold" data-add="loan">+ Prêt</button></div>
+      <div class="actions"><button class="btn ghost" data-go-report="1">Rapport mensuel</button></div>`;
+  }
+
+  function rowTx(t) {
+    return `<div class="row" data-edit="tx" data-id="${t.id}" style="cursor:pointer">
+      <div class="main"><div class="title">${esc(t.note || t.cat)}</div>
+      <div class="muted">${fmtDate(t.date)} · ${esc(t.cat)} · ${esc(userLabel(t.who))}</div></div>
+      <div class="amt ${t.type === 'in' ? 'pos' : 'neg'}">${t.type === 'in' ? '+' : '−'} ${fmt(t.amount, t.cur)}</div></div>`;
+  }
+
+  /* ================= Mouvements ================= */
+  function mouvements() {
+    const list = state.tx.filter(t => matchWho(t.who)).sort((a, b) => b.date.localeCompare(a.date));
+    const byMonth = {};
+    list.forEach(t => { (byMonth[t.date.slice(0, 7)] ||= []).push(t); });
+    const groups = Object.keys(byMonth).map(m =>
+      `<div class="card"><div class="muted" style="font-weight:600;text-transform:capitalize;margin-bottom:4px">${fmtMonth(m)}</div>${byMonth[m].map(rowTx).join('')}</div>`).join('');
+    return `<h2>Mouvements</h2>${whoChips()}
+      ${groups || '<div class="card empty">Aucun mouvement enregistré.</div>'}
+      <div class="actions"><button class="btn" data-add="tx">+ Mouvement</button><button class="btn ghost" data-export="csv">Exporter CSV</button></div>`;
+  }
+
+  /* ================= Prêts ================= */
+  function prets() {
+    const loans = state.loans.filter(l => matchWho(l.who)).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+    const row = l => {
+      const st = loanStatus(l);
+      const rem = loanRemaining(l);
+      const pct = l.amount ? Math.min(100, (loanPaid(l) / l.amount) * 100) : 0;
+      return `<div class="card">
+        <div class="row" style="border:0;padding:0;cursor:pointer" data-edit="loan" data-id="${l.id}">
+          <div class="main"><div class="title">${esc(l.person)} <span class="badge ${st.cls}">${st.label}</span></div>
+            <div class="muted">${l.dir === 'given' ? 'Nous prêtons' : 'Nous empruntons'} · ${fmtDate(l.date)}${l.due ? ' · échéance ' + fmtDate(l.due) : ''} · ${esc(userLabel(l.who))}</div></div>
+          <div class="amt">${fmt(rem, l.cur)}<div class="muted">sur ${fmt(l.amount, l.cur)}</div></div>
+        </div>
+        <div class="progress"><div style="width:${pct}%"></div></div>
+        <div class="actions"><button class="btn small ghost" data-pay="${l.id}">+ Remboursement</button></div></div>`;
+    };
+    return `<h2>Prêts</h2>${whoChips()}
+      ${loans.length ? loans.map(row).join('') : '<div class="card empty">Aucun prêt enregistré.</div>'}
+      <div class="actions"><button class="btn gold" data-add="loan">+ Nouveau prêt</button></div>`;
+  }
+
+  /* ================= Tontines ================= */
+  function tontines() {
+    const row = t => {
+      const next = tontineNext(t);
+      const d = daysBetween(next, todayStr());
+      const members = Number(t.members) || 0;
+      const paid = t.paidCount || 0;
+      const pct = members ? Math.min(100, (paid / members) * 100) : 0;
+      const tag = d < 0 ? '<span class="badge late">Retard</span>' : d <= 3 ? '<span class="badge warn">Bientôt</span>' : '';
+      return `<div class="card">
+        <div class="row" style="border:0;padding:0">
+          <div class="main"><div class="title">${esc(t.name)} ${tag}</div>
+          <div class="muted">${fmt(t.amount, t.cur)} · ${t.freq === 'hebdo' ? 'hebdomadaire' : 'mensuelle'} · ${esc(userLabel(t.who))}</div>
+          <div class="muted">Prochaine cotisation : ${fmtDate(next)}</div></div>
+          <div class="amt">${paid}/${members}<div class="muted">cycles</div></div>
+        </div>
+        <div class="progress"><div style="width:${pct}%"></div></div>
+        <div class="actions">
+          <button class="btn small ghost" data-tpay="${t.id}">+ Cotisation versée</button>
+          <button class="btn small ghost" data-edit="tontine" data-id="${t.id}">Modifier</button>
+        </div></div>`;
+    };
+    const list = state.tontines.filter(t => matchWho(t.who));
+    return `<h2>Tontines</h2>${whoChips()}
+      ${list.length ? list.map(row).join('') : '<div class="card empty">Aucune tontine enregistrée.</div>'}
+      <div class="actions"><button class="btn" data-add="tontine">+ Nouvelle tontine</button></div>`;
+  }
+
+  /* ================= Épargne ================= */
+  function epargne() {
+    const list = state.savings.filter(s => matchWho(s.who));
+    const row = s => {
+      const total = savingsTotal(s);
+      const pct = s.target ? Math.min(100, (total / s.target) * 100) : 0;
+      return `<div class="card">
+        <div class="row" style="border:0;padding:0">
+          <div class="main"><div class="title">${esc(s.name)}</div>
+          <div class="muted">${esc(userLabel(s.who))} · objectif ${fmt(s.target, s.cur)}</div></div>
+          <div class="amt">${fmt(total, s.cur)}<div class="muted">${pct.toFixed(0)} %</div></div>
+        </div>
+        <div class="progress"><div style="width:${pct}%"></div></div>
+        <div class="actions"><button class="btn small ghost" data-deposit="${s.id}">+ Dépôt</button>
+        <button class="btn small ghost" data-edit="saving" data-id="${s.id}">Modifier</button></div></div>`;
+    };
+    return `<h2>Épargne et projets</h2>${whoChips()}
+      ${list.length ? list.map(row).join('') : '<div class="card empty">Aucun objectif d’épargne.</div>'}
+      <div class="actions"><button class="btn" data-add="saving">+ Nouvel objectif</button></div>`;
+  }
+
+  /* ================= Compte ================= */
+  function compte() {
+    const u = USERS[session];
+    return `<h2>Mon compte</h2>
+      <div class="card profile">
+        <img src="${u.photo}" alt="${esc(u.label)}">
+        <div><div class="title" style="font-weight:700;color:var(--navy);font-size:17px">Bonjour ${esc(u.label)}</div>
+        <div class="muted">${u.role} · ${FAMILY}</div></div>
+      </div>
+      <div class="card">
+        <div class="title" style="font-weight:600;margin-bottom:10px">Changer le mot de passe</div>
+        <div class="field"><label>Mot de passe actuel</label><div class="pwd-wrap"><input id="cpCur" type="password" autocomplete="current-password">${'<button type="button" class="eye" data-eye="cpCur">👁</button>'}</div></div>
+        <div class="field"><label>Nouveau mot de passe (6 caractères minimum)</label><div class="pwd-wrap"><input id="cpNew" type="password" autocomplete="new-password">${'<button type="button" class="eye" data-eye="cpNew">👁</button>'}</div></div>
+        <div class="field"><label>Confirmer le nouveau mot de passe</label><div class="pwd-wrap"><input id="cpNew2" type="password" autocomplete="new-password">${'<button type="button" class="eye" data-eye="cpNew2">👁</button>'}</div></div>
+        <button class="btn" id="btnChangePwd">Enregistrer le nouveau mot de passe</button>
+      </div>
+      <div class="card">
+        <div class="title" style="font-weight:600;margin-bottom:6px">Paramètres du foyer</div>
+        <div class="field"><label>Taux de change (1 $ = ? FC)</label><input id="rate" type="number" inputmode="numeric" value="${state.settings.rate}"></div>
+        <div class="field"><label>Dîme mensuelle (en $)</label><input id="tithe" type="number" inputmode="decimal" value="${state.settings.tithe}"></div>
+        <button class="btn" id="btnSettings">Enregistrer</button>
+      </div>
+      <div class="card">
+        <div class="title" style="font-weight:600;margin-bottom:6px">Sauvegarde et partage</div>
+        <div class="muted" style="margin-bottom:10px">Les données restent sur cet appareil. Exportez une sauvegarde pour la transférer sur le téléphone de l’autre personne.</div>
+        <div class="actions"><button class="btn" id="exportJson">Exporter la sauvegarde</button>
+        <button class="btn ghost" id="importBtn">Importer une sauvegarde</button></div>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+      <div class="card"><button class="btn ghost" id="btnLogout">Se déconnecter</button></div>
+      <div class="card"><button class="btn danger" id="resetAll">Effacer les données de cet appareil</button></div>`;
+  }
+
+  /* ================= Rapport mensuel ================= */
+  function rapport() {
+    const m = reportMonth || monthStr();
+    const inM = state.tx.filter(t => t.date.startsWith(m));
+    const sumBy = (type) => {
+      const map = {};
+      inM.filter(t => t.type === type).forEach(t => { const k = t.cat; map[k] = (map[k] || 0) + toUSD(t.amount, t.cur); });
+      return map;
+    };
+    const inc = sumBy('in');
+    const exp = sumBy('out');
+    const totInc = Object.values(inc).reduce((a, b) => a + b, 0);
+    const totExp = Object.values(exp).reduce((a, b) => a + b, 0);
+    const ti = titheFor(m);
+    const loansGiven = state.loans.filter(l => l.dir === 'given').reduce((s, l) => s + toUSD(loanRemaining(l), l.cur), 0);
+    const loansOwed = state.loans.filter(l => l.dir === 'received').reduce((s, l) => s + toUSD(loanRemaining(l), l.cur), 0);
+    const savings = state.savings.reduce((s, x) => s + toUSD(savingsTotal(x), x.cur), 0);
+    const rowsOf = (obj) => Object.keys(obj).sort((a, b) => obj[b] - obj[a])
+      .map(k => `<tr><td>${esc(k)}</td><td class="r">${fmt(obj[k], 'USD')}</td></tr>`).join('') || '<tr><td colspan="2" class="muted">Aucun</td></tr>';
+    const contribRows = CATS_CONTRIB.map(c => `<tr><td>${esc(c)}</td><td class="r">${fmt(exp[c] || 0, 'USD')}</td></tr>`).join('');
+    const now = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    return `
+      <div class="no-print" style="display:flex;gap:8px;align-items:end;margin-bottom:12px">
+        <div class="field" style="flex:1;margin:0"><label>Mois du rapport</label><input type="month" id="rMonth" value="${m}"></div>
+        <button class="btn gold small" id="btnPrint" style="width:auto;padding:12px 14px">Imprimer / PDF</button>
+      </div>
+      <div class="report">
+        <div class="rh">
+          <div class="fam">${FAMILY}</div>
+          <h4>Rapport financier mensuel</h4>
+          <div class="per">${fmtMonth(m)}</div>
+        </div>
+
+        <h5>1. Synthèse</h5>
+        <table>
+          <tr><th>Indicateur</th><th class="r">Montant (USD)</th><th class="r">Équivalent (FC)</th></tr>
+          <tr><td>Total des revenus</td><td class="r">${fmt(totInc, 'USD')}</td><td class="r">${fmt(totInc * state.settings.rate, 'FC')}</td></tr>
+          <tr><td>Total des dépenses</td><td class="r">${fmt(totExp, 'USD')}</td><td class="r">${fmt(totExp * state.settings.rate, 'FC')}</td></tr>
+          <tr class="total"><td>Solde du mois</td><td class="r">${fmt(totInc - totExp, 'USD')}</td><td class="r">${fmt((totInc - totExp) * state.settings.rate, 'FC')}</td></tr>
+        </table>
+        <div class="note">Taux de change appliqué : 1 $ = ${state.settings.rate.toLocaleString('fr-FR')} FC.</div>
+
+        <h5>2. Revenus</h5>
+        <table><tr><th>Catégorie</th><th class="r">Montant (USD)</th></tr>${rowsOf(inc)}</table>
+
+        <h5>3. Dépenses</h5>
+        <table><tr><th>Catégorie</th><th class="r">Montant (USD)</th></tr>${rowsOf(Object.fromEntries(Object.entries(exp).filter(([k]) => !CATS_CONTRIB.includes(k))))}</table>
+
+        <h5>4. Contributions (église et famille)</h5>
+        <table>
+          <tr><th>Objet</th><th class="r">Montant (USD)</th></tr>
+          ${contribRows}
+          <tr class="total"><td>Total des contributions</td><td class="r">${fmt(CATS_CONTRIB.reduce((s, c) => s + (exp[c] || 0), 0), 'USD')}</td></tr>
+        </table>
+        <div class="note">Dîme du mois : versé ${fmt(ti.paid, 'USD')} sur ${fmt(ti.due, 'USD')} — ${ti.rest > 0 ? 'reste à verser ' + fmt(ti.rest, 'USD') : 'entièrement versée'}.</div>
+
+        <h5>5. Situation des prêts et de l’épargne (à la date d’édition)</h5>
+        <table>
+          <tr><th>Élément</th><th class="r">Montant (USD)</th></tr>
+          <tr><td>Sommes dues à la famille</td><td class="r">${fmt(loansGiven, 'USD')}</td></tr>
+          <tr><td>Sommes dues par la famille</td><td class="r">${fmt(loansOwed, 'USD')}</td></tr>
+          <tr><td>Épargne et projets</td><td class="r">${fmt(savings, 'USD')}</td></tr>
+        </table>
+
+        <div class="note">Document établi le ${now} à partir des données enregistrées dans l’application. Les montants en FC sont convertis au taux indiqué.</div>
+        <div class="sign"><div>Établi par</div><div>Visé par</div></div>
+      </div>`;
+  }
+
+  /* ================= formulaires ================= */
+  function openForm(title, fields, onSave, onDelete) {
+    const sheet = document.getElementById('sheet');
+    sheet.innerHTML = `<h3>${title}</h3><form id="f">` + fields.map(fieldHtml).join('') +
+      `<button class="btn" type="submit">Enregistrer</button>` +
+      (onDelete ? `<button class="btn danger" type="button" id="del">Supprimer</button>` : '') +
+      `<button class="btn ghost" type="button" id="cancel">Annuler</button></form>`;
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('cancel').onclick = closeForm;
+    if (onDelete) document.getElementById('del').onclick = () => { if (confirm('Supprimer cet élément ?')) { onDelete(); saveData(); closeForm(); render(); toast('Supprimé'); } };
+    document.getElementById('f').onsubmit = e => {
+      e.preventDefault();
+      const data = {};
+      fields.forEach(f => { data[f.name] = document.getElementById('fld_' + f.name).value; });
+      const err = onSave(data);
+      if (err) { toast(err); return; }
+      saveData(); closeForm(); render(); toast('Enregistré');
+    };
+  }
+  function fieldHtml(f) {
+    const id = 'fld_' + f.name;
+    if (f.type === 'select') {
+      return `<div class="field"><label>${f.label}</label><select id="${id}">${f.options.map(([v, l]) =>
+        `<option value="${esc(v)}" ${String(f.value) === String(v) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
+    }
+    return `<div class="field"><label>${f.label}</label><input id="${id}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" ${f.required ? 'required' : ''} ${f.step ? `step="${f.step}"` : ''} ${f.inputmode ? `inputmode="${f.inputmode}"` : ''}></div>`;
+  }
+  function closeForm() { document.getElementById('overlay').classList.remove('show'); }
+
+  const whoOpts = () => [['taty', USERS.taty.label], ['armine', USERS.armine.label]];
+  const curOpts = () => CURS.map(c => [c, c]);
+
+  function formTx(item, pre = {}) {
+    const isNew = !item;
+    const v = item || Object.assign({ type: 'out', amount: '', cur: state.settings.defaultCur, cat: CATS_OUT[0], date: todayStr(), note: '', who: session }, pre);
+    const cats = t => t === 'in' ? CATS_IN : CATS_OUT;
+    openForm(isNew ? 'Nouveau mouvement' : 'Modifier le mouvement', [
+      { name: 'type', label: 'Type', type: 'select', value: v.type, options: [['out', 'Dépense / contribution'], ['in', 'Revenu']] },
+      { name: 'amount', label: 'Montant', type: 'number', inputmode: 'decimal', step: '0.01', value: v.amount, required: true },
+      { name: 'cur', label: 'Monnaie', type: 'select', value: v.cur, options: curOpts() },
+      { name: 'cat', label: 'Catégorie', type: 'select', value: v.cat, options: cats(v.type).map(c => [c, c]) },
+      { name: 'date', label: 'Date', type: 'date', value: v.date, required: true },
+      { name: 'who', label: 'Qui ?', type: 'select', value: v.who, options: whoOpts() },
+      { name: 'note', label: 'Note', type: 'text', value: v.note }
+    ], data => {
+      const amount = parseFloat(data.amount);
+      if (!(amount > 0)) return 'Montant invalide';
+      const rec = { type: data.type, amount, cur: data.cur, cat: data.cat, date: data.date, who: data.who, note: data.note.trim() };
+      if (isNew) state.tx.push({ id: uid(), ...rec }); else Object.assign(item, rec);
+    }, isNew ? null : () => { state.tx = state.tx.filter(t => t.id !== item.id); });
+  }
+
+  function formLoan(item) {
+    const isNew = !item;
+    const v = item || { dir: 'given', person: '', amount: '', cur: state.settings.defaultCur, date: todayStr(), due: '', who: session, note: '' };
+    openForm(isNew ? 'Nouveau prêt' : 'Modifier le prêt', [
+      { name: 'dir', label: 'Sens', type: 'select', value: v.dir, options: [['given', 'On nous doit (nous prêtons)'], ['received', 'Nous devons (nous empruntons)']] },
+      { name: 'person', label: 'Personne', value: v.person, required: true },
+      { name: 'amount', label: 'Montant prêté', type: 'number', inputmode: 'decimal', step: '0.01', value: v.amount, required: true },
+      { name: 'cur', label: 'Monnaie', type: 'select', value: v.cur, options: curOpts() },
+      { name: 'date', label: 'Date du prêt', type: 'date', value: v.date, required: true },
+      { name: 'due', label: 'Date d’échéance', type: 'date', value: v.due },
+      { name: 'who', label: 'Qui ?', type: 'select', value: v.who, options: whoOpts() },
+      { name: 'note', label: 'Note', value: v.note }
+    ], data => {
+      const amount = parseFloat(data.amount);
+      if (!(amount > 0)) return 'Montant invalide';
+      if (!data.person.trim()) return 'Indiquez la personne';
+      const rec = { dir: data.dir, person: data.person.trim(), amount, cur: data.cur, date: data.date, due: data.due, who: data.who, note: data.note.trim() };
+      if (isNew) state.loans.push({ id: uid(), payments: [], ...rec }); else Object.assign(item, rec);
+    }, isNew ? null : () => { state.loans = state.loans.filter(l => l.id !== item.id); });
+  }
+
+  function formPayment(loan) {
+    openForm('Remboursement — ' + esc(loan.person), [
+      { name: 'amount', label: `Montant (reste ${fmt(loanRemaining(loan), loan.cur)})`, type: 'number', inputmode: 'decimal', step: '0.01', value: '', required: true },
+      { name: 'date', label: 'Date', type: 'date', value: todayStr(), required: true }
+    ], data => {
+      const amount = parseFloat(data.amount);
+      if (!(amount > 0)) return 'Montant invalide';
+      loan.payments.push({ id: uid(), amount, date: data.date });
+    });
+  }
+
+  function formTontine(item) {
+    const isNew = !item;
+    const v = item || { name: '', amount: '', cur: state.settings.defaultCur, freq: 'mensuel', start: todayStr(), members: '', who: session, paidCount: 0 };
+    openForm(isNew ? 'Nouvelle tontine' : 'Modifier la tontine', [
+      { name: 'name', label: 'Nom du groupe', value: v.name, required: true },
+      { name: 'amount', label: 'Cotisation par personne', type: 'number', inputmode: 'decimal', step: '0.01', value: v.amount, required: true },
+      { name: 'cur', label: 'Monnaie', type: 'select', value: v.cur, options: curOpts() },
+      { name: 'freq', label: 'Fréquence', type: 'select', value: v.freq, options: [['hebdo', 'Hebdomadaire'], ['mensuel', 'Mensuelle']] },
+      { name: 'start', label: 'Date de début', type: 'date', value: v.start, required: true },
+      { name: 'members', label: 'Nombre de membres (cycles)', type: 'number', inputmode: 'numeric', value: v.members, required: true },
+      { name: 'who', label: 'Qui ?', type: 'select', value: v.who, options: whoOpts() }
+    ], data => {
+      const amount = parseFloat(data.amount), members = parseInt(data.members, 10);
+      if (!(amount > 0) || !(members > 0)) return 'Vérifiez le montant et le nombre de membres';
+      const rec = { name: data.name.trim(), amount, cur: data.cur, freq: data.freq, start: data.start, members, who: data.who };
+      if (isNew) state.tontines.push({ id: uid(), paidCount: 0, ...rec }); else Object.assign(item, rec);
+    }, isNew ? null : () => { state.tontines = state.tontines.filter(t => t.id !== item.id); });
+  }
+
+  function formSaving(item) {
+    const isNew = !item;
+    const v = item || { name: '', target: '', cur: state.settings.defaultCur, who: session };
+    openForm(isNew ? 'Nouvel objectif' : 'Modifier l’objectif', [
+      { name: 'name', label: 'Objectif (ex. terrain, scolarité, voyage)', value: v.name, required: true },
+      { name: 'target', label: 'Montant visé', type: 'number', inputmode: 'decimal', step: '0.01', value: v.target, required: true },
+      { name: 'cur', label: 'Monnaie', type: 'select', value: v.cur, options: curOpts() },
+      { name: 'who', label: 'Qui ?', type: 'select', value: v.who, options: whoOpts() }
+    ], data => {
+      const target = parseFloat(data.target);
+      if (!(target > 0)) return 'Montant invalide';
+      const rec = { name: data.name.trim(), target, cur: data.cur, who: data.who };
+      if (isNew) state.savings.push({ id: uid(), deposits: [], ...rec }); else Object.assign(item, rec);
+    }, isNew ? null : () => { state.savings = state.savings.filter(s => s.id !== item.id); });
+  }
+
+  function formDeposit(s) {
+    openForm('Dépôt — ' + esc(s.name), [
+      { name: 'amount', label: 'Montant', type: 'number', inputmode: 'decimal', step: '0.01', value: '', required: true },
+      { name: 'date', label: 'Date', type: 'date', value: todayStr(), required: true }
+    ], data => {
+      const amount = parseFloat(data.amount);
+      if (!(amount > 0)) return 'Montant invalide';
+      s.deposits.push({ id: uid(), amount, date: data.date });
+    });
+  }
+
+  /* ================= export ================= */
+  function download(name, content, type) {
+    const blob = new Blob([content], { type });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  function exportCsv() {
+    const rows = [['Date', 'Type', 'Montant', 'Monnaie', 'Catégorie', 'Qui', 'Note']];
+    state.tx.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(t =>
+      rows.push([t.date, t.type === 'in' ? 'Revenu' : 'Dépense', t.amount, t.cur, t.cat, userLabel(t.who), t.note]));
+    const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+    download('mouvements.csv', '﻿' + csv, 'text/csv;charset=utf-8');
+  }
+
+  /* ================= événements ================= */
+  function bind() {
+    document.querySelectorAll('[data-who]').forEach(el => el.onclick = () => { filterWho = el.dataset.who; render(); });
+    document.querySelectorAll('[data-add]').forEach(el => el.onclick = () => {
+      const kind = el.dataset.add;
+      if (kind === 'tx') {
+        const pre = {};
+        if (el.dataset.cat) { pre.cat = el.dataset.cat; pre.type = 'out'; pre.cur = el.dataset.cur || state.settings.defaultCur; }
+        if (el.dataset.amount) pre.amount = el.dataset.amount;
+        formTx(null, pre);
+      } else ({ loan: formLoan, tontine: formTontine, saving: formSaving })[kind]();
+    });
+    document.querySelectorAll('[data-edit]').forEach(el => el.onclick = e => {
+      if (e.target.closest('button')) return;
+      const map = { tx: state.tx, loan: state.loans, tontine: state.tontines, saving: state.savings };
+      const item = map[el.dataset.edit].find(x => x.id === el.dataset.id);
+      if (item) ({ tx: formTx, loan: formLoan, tontine: formTontine, saving: formSaving })[el.dataset.edit](item);
+    });
+    document.querySelectorAll('[data-pay]').forEach(el => el.onclick = () => {
+      const l = state.loans.find(x => x.id === el.dataset.pay); if (l) formPayment(l);
+    });
+    document.querySelectorAll('[data-tpay]').forEach(el => el.onclick = () => {
+      const t = state.tontines.find(x => x.id === el.dataset.tpay);
+      if (!t) return;
+      if ((t.paidCount || 0) >= t.members) { toast('Tous les cycles sont versés'); return; }
+      t.paidCount = (t.paidCount || 0) + 1;
+      state.tx.push({ id: uid(), type: 'out', amount: t.amount, cur: t.cur, cat: 'Autre', date: todayStr(), who: t.who, note: 'Tontine : ' + t.name });
+      saveData(); render(); toast('Cotisation enregistrée');
+    });
+    document.querySelectorAll('[data-deposit]').forEach(el => el.onclick = () => {
+      const s = state.savings.find(x => x.id === el.dataset.deposit); if (s) formDeposit(s);
+    });
+    document.querySelectorAll('[data-export]').forEach(el => el.onclick = exportCsv);
+    document.querySelectorAll('[data-go-report]').forEach(el => el.onclick = () => { currentTab = 'rapport'; render(); window.scrollTo(0, 0); });
+    document.querySelectorAll('[data-eye]').forEach(b => b.onclick = () => {
+      const el = document.getElementById(b.dataset.eye);
+      el.type = el.type === 'password' ? 'text' : 'password';
+    });
+
+    const rm = document.getElementById('rMonth');
+    if (rm) rm.onchange = () => { reportMonth = rm.value; render(); };
+    const bp = document.getElementById('btnPrint');
+    if (bp) bp.onclick = () => window.print();
+
+    const cp = document.getElementById('btnChangePwd');
+    if (cp) cp.onclick = async () => {
+      const acc = auth[session];
+      const cur = document.getElementById('cpCur').value;
+      const n1 = document.getElementById('cpNew').value;
+      const n2 = document.getElementById('cpNew2').value;
+      if (await hashPwd(acc.salt, cur) !== acc.hash) return toast('Mot de passe actuel incorrect');
+      if (n1.length < 6) return toast('Le nouveau mot de passe doit comporter au moins 6 caractères');
+      if (n1 !== n2) return toast('Les deux nouveaux mots de passe ne correspondent pas');
+      acc.hash = await hashPwd(acc.salt, n1); saveAuth();
+      document.getElementById('cpCur').value = ''; document.getElementById('cpNew').value = ''; document.getElementById('cpNew2').value = '';
+      toast('Mot de passe modifié');
+    };
+    const bs = document.getElementById('btnSettings');
+    if (bs) bs.onclick = () => {
+      const r = parseFloat(document.getElementById('rate').value);
+      const t = parseFloat(document.getElementById('tithe').value);
+      if (!(r > 0) || !(t >= 0)) return toast('Valeurs invalides');
+      state.settings.rate = r; state.settings.tithe = t; saveData(); render(); toast('Paramètres enregistrés');
+    };
+    const ex = document.getElementById('exportJson');
+    if (ex) ex.onclick = () => download('sauvegarde-financement-' + todayStr() + '.json', JSON.stringify(state, null, 2), 'application/json');
+    const ib = document.getElementById('importBtn');
+    if (ib) ib.onclick = () => document.getElementById('importFile').click();
+    const inp = document.getElementById('importFile');
+    if (inp) inp.onchange = () => {
+      const f = inp.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const data = JSON.parse(r.result);
+          if (!confirm('Remplacer les données actuelles par cette sauvegarde ?')) return;
+          state = Object.assign(structuredClone(defaults), data, { settings: Object.assign(structuredClone(defaults.settings), data.settings || {}) });
+          saveData(); render(); toast('Sauvegarde importée');
+        } catch (e) { toast('Fichier invalide'); }
+      };
+      r.readAsText(f);
+    };
+    const lo = document.getElementById('btnLogout');
+    if (lo) lo.onclick = logout;
+    const ra = document.getElementById('resetAll');
+    if (ra) ra.onclick = () => {
+      if (confirm('Effacer toutes les données de cet appareil ? (les accès restent)')) { state = structuredClone(defaults); saveData(); render(); toast('Données effacées'); }
+    };
+  }
+
+  /* ================= navigation ================= */
+  document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
+    currentTab = b.dataset.tab; filterWho = 'all'; render(); window.scrollTo(0, 0);
+  });
+  document.getElementById('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') closeForm(); });
+
+  /* ================= démarrage ================= */
+  if (session && USERS[session]) showApp();
+  else renderAuth('login');
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+})();
+</script>
+</body>
+</html>
