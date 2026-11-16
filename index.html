@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1565ff">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Famille IPANGA">
-<title>Famille IPANGA · Gestion de financement</title>
+<meta name="apple-mobile-web-app-title" content="JEL">
+<title>JEL · Gestion de financement</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -244,7 +244,7 @@
   const DATA_KEY = 'gestion-financement-v1';
   const AUTH_KEY = 'gf-auth-v1';
   const SESSION_KEY = 'gf-session-v1';
-  const FAMILY = 'Famille IPANGA';
+  const FAMILY = 'JEL';
   const CATS_OUT = ['Dîme', 'Offrande (église)', 'Contribution famille', 'Tontine', 'Alimentation', 'Logement', 'Transport', 'Santé', 'Scolarité', 'Factures', 'Vêtements', 'Autre'];
   const CATS_IN = ['Salaire', 'Commerce', 'Aide familiale', 'Autre'];
   const CONTRIB = ['Dîme', 'Offrande (église)', 'Contribution famille'];
@@ -254,8 +254,7 @@
   const CURS = ['FC', 'USD'];
   const QUESTIONS = ['Nom de jeune fille de la mère', 'Ville où vous vous êtes mariés', 'Nom du premier animal de compagnie', 'Nom de votre école primaire'];
   const USERS = {
-    taty:   { label: 'Taty IPANGA',   role: 'Père', photo: 'avatar-taty.jpg' },
-    armine: { label: 'Armine IPANGA', role: 'Mère', photo: 'avatar-armine.jpg' }
+    'jelliffelulua1@gmail.com': { label: 'Jelliffe LULUA', role: '', photo: 'avatar-jel.jpg' }
   };
 
   const ICONS = {
@@ -454,7 +453,7 @@
     });
     document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
       const u = document.getElementById('uid');
-      renderAuth(b.dataset.go, u ? u.value : 'taty');
+      renderAuth(b.dataset.go, u ? u.value : 'jelliffelulua1@gmail.com');
     });
     const u = document.getElementById('uid');
     if (u && mode !== 'login') u.onchange = () => renderAuth(mode, u.value);
@@ -545,7 +544,7 @@
   }
 
   function whoChips() {
-    const opts = [['all', 'Tous'], ['taty', 'Taty'], ['armine', 'Armine']];
+    const opts = [['all', 'Tous'], ...Object.keys(USERS).map(k => [k, USERS[k].label])];
     return '<div class="chips no-print">' + opts.map(([k, l]) => `<span class="chip ${filterWho === k ? 'on' : ''}" data-who="${k}">${esc(l)}</span>`).join('') + '</div>';
   }
 
@@ -875,7 +874,7 @@
   }
   function closeForm() { document.getElementById('overlay').classList.remove('show'); }
 
-  const whoOpts = () => [['taty', USERS.taty.label], ['armine', USERS.armine.label]];
+  const whoOpts = () => Object.keys(USERS).map(k => [k, USERS[k].label]);
   const curOpts = () => CURS.map(c => [c, c]);
 
   function formTx(type, item, pre = {}) {
